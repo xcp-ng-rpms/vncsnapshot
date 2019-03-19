@@ -1,0 +1,30 @@
+diff -ru vncsnapshot-1.2a.orig/rfbproto.c vncsnapshot-1.2a/rfbproto.c
+--- vncsnapshot-1.2a.orig/rfbproto.c	2012-03-26 09:59:00.597403040 +0100
++++ vncsnapshot-1.2a/rfbproto.c	2012-03-26 13:13:05.603043740 +0100
+@@ -517,6 +517,7 @@
+     int linesToRead;
+     int bytesPerLine;
+     int i;
++    int onlyCursor = 1;
+ 
+     if (!ReadFromRFBServer(((char *)&msg.fu) + 1,
+ 			   sz_rfbFramebufferUpdateMsg - 1))
+@@ -556,6 +557,7 @@
+ 	continue;
+       }
+ 
++      onlyCursor = 0;
+       if ((rect.r.x + rect.r.w > si.framebufferWidth) ||
+ 	  (rect.r.y + rect.r.h > si.framebufferHeight))
+ 	{
+@@ -677,6 +679,10 @@
+         /* Done. Save the screen image. */
+     }
+ 
++    /* ignore updates of cursors only */
++    if (onlyCursor)
++      break;
++
+       /* RealVNC sometimes returns an initial black screen. */
+       if (BufferIsBlank() && appData.ignoreBlank) {
+           if (!appData.quiet && appData.ignoreBlank != 1) {

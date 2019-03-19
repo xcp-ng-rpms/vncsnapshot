@@ -1,0 +1,30 @@
+From 931915e3953840f751d781527268b85a0df89ed3 Mon Sep 17 00:00:00 2001
+From: Frediano Ziglio <frediano.ziglio@citrix.com>
+Date: Fri, 23 Mar 2012 15:35:23 +0000
+Subject: [PATCH 3/3] fix taking multiple snapshots
+
+---
+ vncsnapshot.c |    6 +++---
+ 1 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/vncsnapshot.c b/vncsnapshot.c
+index c7b2153..0d60e3e 100644
+--- a/vncsnapshot.c
++++ b/vncsnapshot.c
+@@ -241,10 +241,10 @@ main(int argc, char **argv)
+          * to grab the snapshot.
+          */
+         time_t now = time(NULL);
+-        if (now < last_time + appData.fps) {
+-            sleep(last_time + appData.fps - now);
++	last_time += appData.fps;
++        if (now < last_time) {
++            sleep(last_time - now);
+         }
+-        last_time = now;
+ 	/* Request update - incremental is fine here. */
+ 	SendIncrementalFramebufferUpdateRequest();
+     }
+-- 
+1.7.5.4
+

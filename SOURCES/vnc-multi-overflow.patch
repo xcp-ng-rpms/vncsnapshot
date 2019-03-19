@@ -1,0 +1,27 @@
+From 85609d34a9cd27698f1f9d8b4627493d4ee34c18 Mon Sep 17 00:00:00 2001
+From: Frediano Ziglio <frediano.ziglio@citrix.com>
+Date: Thu, 8 Mar 2012 20:14:35 +0000
+Subject: [PATCH 2/3] avoid buffer overflow using a lot of files
+
+---
+ vncsnapshot.c |    4 ++--
+ 1 files changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/vncsnapshot.c b/vncsnapshot.c
+index ac1d54f..c7b2153 100644
+--- a/vncsnapshot.c
++++ b/vncsnapshot.c
+@@ -108,8 +108,8 @@ main(int argc, char **argv)
+   if (appData.count > 1) {
+       last_time = time(NULL);
+       count = 0;
+-      /* Maximum length of a 32-bit integer is 10 digits plus sign */
+-      filename = (char *) malloc(strlen(appData.outputFilename) + 11 + 1);
++      /* Maximum length of a 32-bit integer is 10 digits plus sign, plus size for extension */
++      filename = (char *) malloc(strlen(appData.outputFilename) + 11 + 4 + 1);
+       /* Determine where to insert number. If the supplied filename
+        * ends in .jpg, or .jpeg (case insensitive), then it goes
+        * before that. If not, it goes at the end, with .jpg appended.
+-- 
+1.7.5.4
+

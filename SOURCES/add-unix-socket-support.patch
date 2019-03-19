@@ -1,0 +1,144 @@
+diff --git a/argsresources.c b/argsresources.c
+index f0a5cee..8e31971 100644
+--- a/argsresources.c
++++ b/argsresources.c
+@@ -59,6 +59,7 @@ Options cmdLineOptions[] = {
+   {"-vncQuality",    setNumber, &appData.qualityLevel, 0, " <JPEG-QUALITY-VALUE>: transmission quality level (0..9: 0-low, 9-high)"},
+   {"-fps",           setNumber, &appData.fps, 0, " <FPS>: Wait <FPS> seconds between snapshots, default 60"},
+   {"-count",         setNumber, &appData.count, 0, " <COUNT>: Capture <COUNT> images, default 1"},
++  {"-unix",          setFlag,   &appData.useUnixSocket, 1, NULL},
+   {NULL, NULL, NULL, 0}
+ };
+ 
+@@ -98,6 +99,7 @@ AppData appData = {
+     0,      /* gotCursorPos (-cursor, -nocursor worked) */
+     60,     /* fps */
+     1,      /* count */
++    0,      /* useUnixSocket */
+     };
+ 
+ 
+@@ -128,18 +130,20 @@ usage(void)
+ 	  "TightVNC snapshot version " VNC_SNAPSHOT_VERSION " (based on TightVNC 1.2.8 and RealVNC 3.3.7)\n"
+ 	  "\n"
+ 	  "Usage: %s [<OPTIONS>] [<HOST>]:<DISPLAY#> filename\n"
++	  "       %s [<OPTIONS>] -unix <PATH> filename\n"
+ 	  "       %s [<OPTIONS>] -listen [<DISPLAY#>] filename\n"
+ 	  "       %s [<OPTIONS>] -tunnel <HOST>:<DISPLAY#> filename\n"
+ 	  "       %s [<OPTIONS>] -via <GATEWAY> [<HOST>]:<DISPLAY#> filename\n"
+ 	  "\n"
+ 	  "<OPTIONS> are:"
+-	  "\n", programName, programName, programName, programName);
++	  "\n", programName, programName, programName, programName, programName);
+     for (i = 0; cmdLineOptions[i].optionstring; i++) {
++        if (!cmdLineOptions[i].optiondesc)
++            break;
++
+         fprintf(stderr, 
+ 	  "        %s", cmdLineOptions[i].optionstring);
+-        if (cmdLineOptions[i].optiondesc) {
+-            fprintf(stderr, "%s", cmdLineOptions[i].optiondesc);
+-        }
++        fprintf(stderr, "%s", cmdLineOptions[i].optiondesc);
+         if (cmdLineOptions[i].set == setFlag && *(Bool *)cmdLineOptions[i].arg) {
+             fprintf(stderr, " (default)");
+         } else if (cmdLineOptions[i].set == setNumber) {
+@@ -274,7 +278,10 @@ GetArgsAndResources(int argc, char **argv)
+   }
+ 
+   colonPos = strchr(vncServerName, ':');
+-  if (colonPos == NULL) {
++  if (appData.useUnixSocket) {
++    /* The path to the UNIX socket is set as the hostname. */
++    strcpy(vncServerHost, vncServerName);
++  } else if (colonPos == NULL) {
+     /* No colon -- use default port number */
+     strcpy(vncServerHost, vncServerName);
+     vncServerPort = SERVER_PORT_OFFSET;
+diff --git a/sockets.cxx b/sockets.cxx
+index 0cbc651..e59ef0c 100644
+--- a/sockets.cxx
++++ b/sockets.cxx
+@@ -30,6 +30,7 @@ typedef int socklen_t;
+ #else
+ #include <unistd.h>
+ #include <sys/socket.h>
++#include <sys/un.h>
+ #include <errno.h>
+ #include <netinet/in.h>
+ #include <netinet/tcp.h>
+@@ -108,7 +109,8 @@ InitializeSockets(void)
+ 
+ Bool ConnectToRFBServer(const char *hostname, int port)
+ {
+-  int sock = ConnectToTcpAddr(hostname, port);
++  int sock = appData.useUnixSocket ? ConnectToUnixAddr(hostname) :
++                                     ConnectToTcpAddr(hostname, port);
+ 
+   if (sock < 0) {
+     fprintf(stderr,"Unable to connect to VNC server\n");
+@@ -170,6 +172,44 @@ Bool WriteToRFBServer(char *buf, int n)
+ 
+ 
+ /*
++ * ConnectToUnixAddr connects to the UNIX socket specified by path.
++ */
++int ConnectToUnixAddr(const char *path)
++{
++  struct sockaddr_un addr;
++  int sock, saved_errno;
++
++  if ((strlen(path) + 1) > sizeof(addr.sun_path)) {
++    fprintf(stderr, "%s: %s: path too long\n", programName, __func__);
++    return -1;
++  }
++
++  memset(&addr, 0, sizeof(addr));
++  addr.sun_family = AF_UNIX;
++  strcpy(addr.sun_path, path);
++
++  sock = socket(AF_UNIX, SOCK_STREAM, 0);
++  if (sock < 0) {
++    saved_errno = errno;
++    fputs(programName, stderr);
++    errno = saved_errno;
++    perror(": ConnectToUnixAddr: socket");
++    return -1;
++  }
++
++  if (connect(sock, (const struct sockaddr *)&addr, sizeof(addr)) < 0) {
++    saved_errno = errno;
++    fputs(programName, stderr);
++    errno = saved_errno;
++    perror(": ConnectToUnixAddr: connect");
++    close(sock);
++    return -1;
++  }
++
++  return sock;
++}
++
++/*
+  * ConnectToTcpAddr connects to the given host and port.
+  */
+ 
+diff --git a/vncsnapshot.h b/vncsnapshot.h
+index 7b06698..e1bf3ea 100644
+--- a/vncsnapshot.h
++++ b/vncsnapshot.h
+@@ -111,6 +111,7 @@ typedef struct {
+   char gotCursorPos;
+   int fps;
+   int count;	/* number of snapshots to grab */
++  Bool useUnixSocket;	/* connect to a UNIX socket */
+ } AppData;
+ 
+ extern AppData appData;
+@@ -192,6 +193,7 @@ extern int KbitsPerSecond();
+ extern int TimeWaitedIn100us();
+ extern Bool ReadFromRFBServer(char *out, unsigned int n);
+ extern Bool WriteToRFBServer(char *buf, int n);
++extern int ConnectToUnixAddr(const char *path);
+ extern int ConnectToTcpAddr(const char* hostname, int port);
+ extern int FindFreeTcpPort();
+ extern int ListenAtTcpPort(int port);
