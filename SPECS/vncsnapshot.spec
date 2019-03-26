@@ -16,6 +16,7 @@ Patch4:         vnc-only-cursor.patch
 Patch5:         add-unix-socket-support.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}
 
+BuildRequires:  gcc-c++
 BuildRequires:  zlib-devel >= 1.2
 BuildRequires:  libjpeg-devel
 Requires:       zlib >= 1.2
