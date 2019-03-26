@@ -1,6 +1,6 @@
 Name:           vncsnapshot
 Version:        1.2a
-Release:        xs18
+Release:        xs18%{dist}
 Epoch:          0
 Summary:        VNC Snapshot is a command-line program for VNC. It will save a JPEG image of the VNC server's screen.
 
