@@ -7,13 +7,18 @@ Summary:        VNC Snapshot is a command-line program for VNC. It will save a J
 Group:          Application/Productivity
 License:        GPL
 URL:            http://vncsnapshot.sourceforge.net/
-Source0:        https://repo.citrite.net/xs-local-contrib/vncsnapshot/%{name}-%{version}-src.tar.bz2
-Patch0:         vnc-format.patch
-Patch1:         vnc-multi-overflow.patch
-Patch2:         vnc-snapshot-multi.patch
-Patch3:         vnc-64bit.patch
-Patch4:         vnc-only-cursor.patch
-Patch5:         add-unix-socket-support.patch
+
+Source0: https://repo.citrite.net/xs-local-contrib/vncsnapshot/vncsnapshot-1.2a-src.tar.bz2
+Patch0: SOURCES/vncsnapshot/vnc-format.patch
+Patch1: SOURCES/vncsnapshot/vnc-multi-overflow.patch
+Patch2: SOURCES/vncsnapshot/vnc-snapshot-multi.patch
+Patch3: SOURCES/vncsnapshot/vnc-64bit.patch
+Patch4: SOURCES/vncsnapshot/vnc-only-cursor.patch
+Patch5: SOURCES/vncsnapshot/add-unix-socket-support.patch
+
+
+Provides: gitsha(https://code.citrite.net/rest/archive/latest/projects/XS/repos/vncsnapshot/archive?at=1.0.1&format=tar#/vncsnapshot.patches.tar) = cd16f076aac2791b6e994767ea1f4dc851cc3313
+
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}
 
 BuildRequires:  gcc-c++
@@ -29,7 +34,6 @@ Also included with the package is vncpasswd, to allow you to create password fil
 
 VNC Snapshot is derived from Tight VNC [www.tightvnc.com] and Real VNC [www.realvnc.com].
 
-Sources and binaries can be download from the VNCSnapshot Source Forge site.
 
 %prep
 %setup -q -n %{name}-%{version}
