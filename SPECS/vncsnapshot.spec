@@ -1,29 +1,30 @@
+%global package_speccommit 41993adadaae9507f0596ec9f7392edb8b405005
+%global usver 1.2a
+%global xsver 20
+%global xsrel %{xsver}%{?xscount}%{?xshash}
+
 Name:           vncsnapshot
 Version:        1.2a
-Release:        xs18%{?dist}
+Release:        %{?xsrel}%{?dist}
 Epoch:          0
 Summary:        VNC Snapshot is a command-line program for VNC. It will save a JPEG image of the VNC server's screen.
 
 Group:          Application/Productivity
 License:        GPL
 URL:            http://vncsnapshot.sourceforge.net/
-
-Source0: https://repo.citrite.net/xs-local-contrib/vncsnapshot/vncsnapshot-1.2a-src.tar.bz2
-Patch0: SOURCES/vncsnapshot/vnc-format.patch
-Patch1: SOURCES/vncsnapshot/vnc-multi-overflow.patch
-Patch2: SOURCES/vncsnapshot/vnc-snapshot-multi.patch
-Patch3: SOURCES/vncsnapshot/vnc-64bit.patch
-Patch4: SOURCES/vncsnapshot/vnc-only-cursor.patch
-Patch5: SOURCES/vncsnapshot/add-unix-socket-support.patch
-
-
-Provides: gitsha(https://code.citrite.net/rest/archive/latest/projects/XS/repos/vncsnapshot/archive?at=1.0.1&format=tar#/vncsnapshot.patches.tar) = cd16f076aac2791b6e994767ea1f4dc851cc3313
-
+Source0: vncsnapshot-1.2a-src.tar.bz2
+Patch0: vnc-format.patch
+Patch1: vnc-multi-overflow.patch
+Patch2: vnc-snapshot-multi.patch
+Patch3: vnc-64bit.patch
+Patch4: vnc-only-cursor.patch
+Patch5: add-unix-socket-support.patch
 BuildRoot:      %{_tmppath}/%{name}-%{version}-%{release}
 
 BuildRequires:  gcc-c++
 BuildRequires:  zlib-devel >= 1.2
 BuildRequires:  libjpeg-devel
+%{?_cov_buildrequires}
 Requires:       zlib >= 1.2
 Requires:       libjpeg
 
@@ -34,18 +35,14 @@ Also included with the package is vncpasswd, to allow you to create password fil
 
 VNC Snapshot is derived from Tight VNC [www.tightvnc.com] and Real VNC [www.realvnc.com].
 
+Sources and binaries can be download from the VNCSnapshot Source Forge site.
 
 %prep
-%setup -q -n %{name}-%{version}
-%patch0 -p1
-%patch1 -p1
-%patch2 -p1
-%patch3 -p1
-%patch4 -p1
-%patch5 -p1
+%autosetup -n %{name}-%{version} -p1
+%{?_cov_prepare}
 
 %build
-make
+%{?_cov_wrap} make
 
 %install
 mkdir -p %{buildroot}%{_bindir}
@@ -56,16 +53,29 @@ cp -ar vncpasswd %{buildroot}%{_bindir}/vncpassword-vncsnapshot
 
 cat vncsnapshot.man1 | gzip -c > %{buildroot}%{_mandir}/man1/vncsnapshot.1.gz
 
-%clean
-rm -rf %{buildroot} 
+%{?_cov_install}
 
-%files 
+%clean
+rm -rf %{buildroot}
+
+%files
 %defattr(-,root,root,-)
 %doc BUILD BUILD.unix BUILD.win32 CHANGE-LOG.txt MANIFEST README RELEASE-NOTES-1.1.txt RELEASE-NOTES.txt web-page.html
 %{_bindir}/*
 %{_mandir}/man1/*
 
+%{?_cov_results_package}
+
 %changelog
+* Fri Feb 11 2022 Ross Lagerwall <ross.lagerwall@citrix.com> - 1.2a-20
+- CP-38416: Enable static analysis
+
+* Tue Dec 08 2020 Ross Lagerwall <ross.lagerwall@citrix.com> - 0:1.2a-19
+- CP-35517: Package for koji
+
+* Fri Dec 06 2019 Tim Smith <tim.smith@citrix.com> - 0:1.2a-18
+- Dropped xs from release
+
 * Thu Nov 02 2017 Ross Lagerwall <ross.lagerwall@citrix.com> - 1.2a-xs18
 - Add support for connecting to a UNIX socket.
 
